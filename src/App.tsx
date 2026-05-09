@@ -34,32 +34,42 @@ if uploaded_file is not None:
         engine = "openpyxl" if file_extension == "xlsx" else "xlrd"
         
         with st.spinner("Processing spreadsheet..."):
-            df = pd.read_excel(uploaded_file, engine=engine)
+            dfs = pd.read_excel(uploaded_file, engine=engine, sheet_name=None)
         
-        st.success(f"Successfully loaded '{uploaded_file.name}'")
+        st.success(f"Successfully loaded '{uploaded_file.name}' with {len(dfs)} sheet(s)")
         
-        # Layout for summary
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Rows", len(df))
-        with col2:
-            st.metric("Columns", len(df.columns))
-        with col3:
-            st.metric("Memory Usage", f"{df.memory_usage(deep=True).sum() / 1024:.1f} KB")
+        sheet_names = list(dfs.keys())
+        tabs = st.tabs(sheet_names)
+        
+        for tab, sheet_name in zip(tabs, sheet_names):
+            with tab:
+                df = dfs[sheet_name]
+                
+                # Layout for summary
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Rows", len(df))
+                with col2:
+                    st.metric("Columns", len(df.columns))
+                with col3:
+                    st.metric("Memory Usage", f"{df.memory_usage(deep=True).sum() / 1024:.1f} KB")
 
-        st.subheader("📋 Data Preview")
-        st.dataframe(df, use_container_width=True, height=500)
-        
-        if st.checkbox("Show Data Summary/Statistics"):
-            st.subheader("📈 Statistical Summary")
-            st.write(df.describe())
-            
-        if st.checkbox("Show Column Info"):
-            st.subheader("ℹ️ Column Details")
-            buffer = io.StringIO()
-            df.info(buf=buffer)
-            s = buffer.getvalue()
-            st.text(s)
+                st.subheader(f"📋 Data Preview: {sheet_name}")
+                st.dataframe(df, use_container_width=True, height=500)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.checkbox("Show Data Summary/Statistics", key=f"stats_{sheet_name}"):
+                        st.subheader("📈 Statistical Summary")
+                        st.write(df.describe())
+                        
+                with col2:
+                    if st.checkbox("Show Column Info", key=f"info_{sheet_name}"):
+                        st.subheader("ℹ️ Column Details")
+                        buffer = io.StringIO()
+                        df.info(buf=buffer)
+                        s = buffer.getvalue()
+                        st.text(s)
 
     except Exception as e:
         st.error(f"Error: Could not read the Excel file. Details: {str(e)}")
@@ -83,7 +93,7 @@ export default function App() {
     if (mountNodeRef.current && window.stlite) {
       window.stlite.mount(
         {
-          requirements: ["pandas", "openpyxl", "xlrd"],
+          requirements: ["pandas", "openpyxl", "xlrd", "pyarrow"],
           entrypoint: "streamlit_app.py",
           files: {
             "streamlit_app.py": STREAMLIT_CODE,
@@ -95,7 +105,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="flex h-screen w-full bg-[#F9FAFB] text-slate-900 font-sans overflow-hidden">
+    <div className="flex h-[100dvh] w-full bg-[#F9FAFB] text-slate-900 font-sans overflow-hidden">
       {/* Sidebar */}
       <aside className="w-80 bg-white border-r border-slate-200 p-8 flex flex-col gap-10 flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -141,7 +151,7 @@ export default function App() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 bg-white">
+      <main className="flex-1 flex flex-col min-w-0 min-h-0 bg-white">
         <header className="h-20 flex items-center justify-between px-10 border-b border-slate-100 flex-shrink-0">
           <div className="flex items-center gap-4">
             <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[11px] font-bold tracking-wide">
@@ -164,10 +174,10 @@ export default function App() {
         </header>
 
         {/* Stlite Mounted Container */}
-        <div className="flex-1 p-10 overflow-hidden bg-[#F9FAFB]">
+        <div className="flex-1 bg-[#F9FAFB] min-h-0 relative overflow-hidden">
           <div 
             ref={mountNodeRef} 
-            className="h-full bg-white border border-slate-200 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col transition-all"
+            className="absolute top-10 bottom-10 left-10 right-10 bg-white border border-slate-200 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col transition-all"
             id="stlite-container"
           />
         </div>

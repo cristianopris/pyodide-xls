@@ -1,0 +1,6 @@
+{
+  "name": "Stlite Excel Viewer",
+  "description": "A browser-based Excel viewer powered by stlite (Pyodide-based Streamlit). Upload and preview .xls and .xlsx files directly in your browser.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
